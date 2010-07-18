@@ -1,0 +1,6 @@
+name = Dynamic CSS UI
+description = Provides theme settings based on dcss variables (theme must support it)
+core = "6.x"
+
+dependencies[] = dcss
+
