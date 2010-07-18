@@ -25,18 +25,27 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
  * Goes through each element in an array, dealing with it.
  */
 function dcss_ui_build_elements(&$parent, $settings, $values) {
-  foreach($settings as $var => $info) {    
-    $info['title'] = (!empty($info['title']) ? check_plain($info['title']) : check_plain($var));
-    if (!empty($info['below'])) {
+  foreach($values as $var => $value) {  
+    $info = $settings[$var];
+    if (!isset($info)) {
       $parent[$var] = array(
-        '#type' => ($info['type'] == 'group'?'fieldset':NULL),
-        '#title' => $info['title'],
-        '#collapsible' => true,
-        '#collapsed' => true,
+        '#type' => 'value',
+        '#value' => $value,
       );
-      dcss_ui_build_elements($parent[$var], $info['below'], $values[$var]);
-    } else {
-      dcss_ui_build_element($parent, $var, $info, $values[$var]);
+    }
+    else {
+      $info['title'] = (!empty($info['title']) ? check_plain($info['title']) : check_plain($var));
+      if (!empty($info['below'])) {
+        $parent[$var] = array(
+          '#type' => ($info['type'] == 'group'?'fieldset':NULL),
+          '#title' => $info['title'],
+          '#collapsible' => true,
+          '#collapsed' => true,
+        );
+        dcss_ui_build_elements($parent[$var], $info['below'], $value);
+      } else {
+        dcss_ui_build_element($parent, $var, $info, $value);
+      }
     }
   }
 }
