@@ -28,6 +28,7 @@ function dcss_ui_build_elements(&$parent, $settings, $values) {
   foreach($values as $var => $value) {  
     $info = $settings[$var];
     if (!isset($info)) {
+      // If no Dcss ui settings, store the dcss variable so it's kept on save
       $parent[$var] = array(
         '#type' => 'value',
         '#value' => $value,
@@ -112,6 +113,29 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
       );
       $parent[$var]['#element_validate'] = array(
         'dcss_ui_noneify_color',
+      );
+    break;
+    case 'option':
+      $option_types = array(
+        'border' => array(
+          'none' => 'None',
+          'solid' => 'Solid',
+          'dotted' => 'Dotted',
+          'dashed' => 'Dashed',
+          'Double' => 'Double',
+          'groove' => 'Groove',
+          'ridge' => 'Ridge',
+          'inset' => 'Inset',
+          'outset' => 'Outset',
+          'inherit' => 'Inherit',
+        ),
+      );
+
+      $parent[$var] = array(
+        '#type' => 'radios',
+       	'#title' => $info['title'],
+       	'#default_value' => $value,
+       	'#options' => $option_types[$info['options_type']],
       );
     break;
   }
