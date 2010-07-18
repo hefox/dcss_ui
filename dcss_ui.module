@@ -116,26 +116,22 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
       );
     break;
     case 'option':
-      $option_types = array(
-        'border' => array(
-          'none' => 'None',
-          'solid' => 'Solid',
-          'dotted' => 'Dotted',
-          'dashed' => 'Dashed',
-          'Double' => 'Double',
-          'groove' => 'Groove',
-          'ridge' => 'Ridge',
-          'inset' => 'Inset',
-          'outset' => 'Outset',
-          'inherit' => 'Inherit',
-        ),
-      );
-
+      if (!isset($option_types)) {
+        $option_types = module_invoke_all('dcss_option_types');
+        drupal_alter('dcss_option_types', $option_types);
+      }
       $parent[$var] = array(
         '#type' => 'radios',
        	'#title' => $info['title'],
        	'#default_value' => $value,
        	'#options' => $option_types[$info['options_type']],
+      );
+    break;
+    case 'boolean':
+      $parent[$var] = array(
+        '#type' => 'checkbox',
+       	'#title' => $info['title'],
+       	'#default_value' => $value,
       );
     break;
   }
@@ -169,4 +165,25 @@ function dcss_ui_noneify_color($element, &$form_values) {
     $value =  $element['color']['#value'];
   }
   form_set_value($element, $value, $form_values);
+}
+
+
+/**
+ * Implementation of hook_dcss_option_types().
+ */
+function dcss_ui_dcss_option_types() {
+  return array(
+    'border' => array(
+      'none' => 'None',
+      'solid' => 'Solid',
+      'dotted' => 'Dotted',
+      'dashed' => 'Dashed',
+      'Double' => 'Double',
+      'groove' => 'Groove',
+      'ridge' => 'Ridge',
+      'inset' => 'Inset',
+      'outset' => 'Outset',
+      'inherit' => 'Inherit',
+    ),
+  );
 }
