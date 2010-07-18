@@ -4,7 +4,7 @@
  * Implementation of hook_form_system_theme_settings_alter().
  */
 function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
-  // Why isn't this stored elsewhere?
+  // Why isn't this stored elsewhere? ew ew ew
   $var = $form['#parameters'][2];
   $settings = theme_get_settings($var);
   if (empty($settings['dcss_ui'])) {
@@ -21,13 +21,18 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
   dcss_ui_build_elements($form['dcss'], $settings['dcss_ui'], $settings['dcss']);
 }
 
+/**
+ * Goes through each element in an array, dealing with it.
+ */
 function dcss_ui_build_elements(&$parent, $settings, $values) {
-  foreach($settings as $var => $info) {
-    // this is a tree 
-    if ($info['type'] == 'group') {
+  foreach($settings as $var => $info) {    
+    $info['title'] = (!empty($info['title']) ? check_plain($info['title']) : check_plain($var));
+    if (!empty($info['below'])) {
       $parent[$var] = array(
-        '#type' => 'fieldset',
-        '#title' => check_plain($info['title']),
+        '#type' => ($info['type'] == 'group'?'fieldset':NULL),
+        '#title' => $info['title'],
+        '#collapsible' => true,
+        '#collapsed' => true,
       );
       dcss_ui_build_elements($parent[$var], $info['below'], $values[$var]);
     } else {
@@ -43,7 +48,7 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
   if ($info['suffix']) {
     $value = str_replace($info['suffix'], '', $value);
   }
-  $info['title'] = check_plain($info['title']);
+
   switch($info['type']){
     case 'slider':
       if (module_exists('slider_textfield')) {
@@ -86,11 +91,19 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
       );
     break;
     case 'color':
-      $parent[$var] = array(
+      $parent[$var]['color'] = array(
         '#type' => (module_exists('colorpicker') ? 'colorpicker_' : '') . 'textfield',
-       	'#title' =>$info['title'],
-       	'#default_value' => $value ,
+       	'#title' => $info['title'],
+       	'#default_value' => ($value && $value != 'none'? $value : '#000000'),
       ); 
+      $parent[$var]['none'] = array(
+        '#type' => 'checkbox',
+       	'#title' => t('Ignore'),
+       	'#default_value' => ((empty($value) || $value == 'none')? TRUE : FALSE),
+      );
+      $parent[$var]['#element_validate'] = array(
+        'dcss_ui_noneify_color',
+      );
     break;
   }
   if (!$parent[$var]) {
@@ -111,4 +124,16 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
  */
 function dcss_ui_add_suffix($element, &$form_values) {
   form_set_value($element, $element['#value'] . $element['#dcss_info']['suffix'], $form_values);
+}
+/*
+ * Element validator that adds px
+ */
+function dcss_ui_noneify_color($element, &$form_values) {
+  if ($element['none']['#value']) {
+    $value = 'none';
+  }
+  else {
+    $value =  $element['color']['#value'];
+  }
+  form_set_value($element, $value, $form_values);
 }
