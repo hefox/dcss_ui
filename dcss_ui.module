@@ -7,7 +7,6 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
   // Why isn't this stored elsewhere?
   $var = $form['#parameters'][2];
   $settings = theme_get_settings($var);
-  $dcss = $settings['dcss'];
   if (empty($settings['dcss_ui'])) {
     return;
   }
@@ -19,17 +18,35 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
     '#weight' => -1,
     //'#collapsed' => true,
   );
-  foreach($settings['dcss_ui'] as $var => $info) {
-    if ($info['suffix']) {
-      $dcss[$var] = str_replace($info['suffix'], '', $dcss[$var]);
+  dcss_ui_build_elements($form['dcss'], $settings['dcss_ui'], $settings['dcss']);
+}
+
+function dcss_ui_build_elements(&$parent, $settings, $values) {
+  foreach($settings as $var => $info) {
+    // this is a tree 
+    if ($info['type'] == 'group') {
+      $parent[$var] = array(
+        '#type' => 'fieldset',
+        '#title' => check_plain($info['title']),
+      );
+      dcss_ui_build_elements($parent[$var], $info['below'], $values[$var]);
+    } else {
+      dcss_ui_build_element($parent, $var, $info, $values[$var]);
     }
-    switch($info['type']){
-      case 'slider':
-        $info += array(
-          'process' => array(
-            'suffix' => 'px',
-          ),
-        );
+  }
+}
+
+/**
+ * Build form element based on info
+ */
+function dcss_ui_build_element(&$parent, $var, $info, $value) {
+  if ($info['suffix']) {
+    $value = str_replace($info['suffix'], '', $value);
+  }
+  $info['title'] = check_plain($info['title']);
+  switch($info['type']){
+    case 'slider':
+      if (module_exists('slider_textfield')) {
         $info['slider_settings'] += array(
           'min' => 1,
           'max' => 400,
@@ -37,60 +54,61 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
         if (!$info['slider_settings']['width']) {
            $info['slider_settings']['width'] = $info['slider_settings']['max'] - $info['slider_settings']['min'];
         }
-        if (module_exists('slider_textfield')) {
-          
-          $form['dcss'][$var] = array(
-            '#type' => 'slider_textfield',
-           	'#title' =>$info['title'],
-           	'#default_value' => $dcss[$var],
-            '#slider_settings' =>  $info['slider_settings'],
-          );
-
-          break;
+        $parent[$var] = array(
+          '#type' => 'slider_textfield',
+         	'#title' => $info['title'],
+         	'#default_value' => $value,
+          '#slider_settings' =>  $info['slider_settings'],
+        );
+  
+        break;
+      }
+    case 'numeric':
+      $parent[$var] = array(
+        '#type' => 'textfield',
+       	'#title' =>$info['title'],
+       	'#default_value' => $value,
+       	'#size' => 10,
+      ); 
+      break ;
+    case 'imagecache':
+      if (empty($preset_options)) {
+        $preset_options = array(''=>'None');
+        foreach (imagecache_presets() as $pid => $preset) {
+          $preset_options[$preset['presetname']] = $preset['presetname'];
         }
-      case 'numeric':
-        $form['dcss'][$var] = array(
-          '#type' => 'textfield',
-         	'#title' =>$info['title'],
-         	'#default_value' => $dcss[$var],
-         	'#size' => 10,
-        ); 
-        break ;
-      case 'imagecache':
-          $preset_options = array(''=>'None');
-          foreach (imagecache_presets() as $pid => $preset) {
-            $preset_options[$preset['presetname']] = $preset['presetname'];
-          }
-          $form['dcss'][$var] = array(
-            '#type' => 'select',
-            '#options' => $preset_options,
-           	'#title' =>$info['title'],
-           	'#default_value' => $dcss[$var],
-          );
-      break;
-      case 'color':
-      $form['dcss'][$var] = array(
+      }
+      $parent[$var] = array(
+        '#type' => 'select',
+        '#options' => $preset_options,
+       	'#title' =>$info['title'],
+       	'#default_value' => $value,
+      );
+    break;
+    case 'color':
+      $parent[$var] = array(
         '#type' => (module_exists('colorpicker') ? 'colorpicker_' : '') . 'textfield',
        	'#title' =>$info['title'],
-       	'#default_value' => $dcss[$var] ,
+       	'#default_value' => $value ,
       ); 
-      break;
-    }
-    if (!$form['dcss'][$var]) {
-      continue;
-    }
-    $form['dcss'][$var] += array(
-      '#dcss_info' => $info,
-      '#element_validate' => array(
-      ),
-    );
-    if ($info['suffix']) {
-      $form['dcss'][$var]['#element_validate'][] = 'dcss_ui_add_suffix';
-    }
+    break;
   }
-
+  if (!$parent[$var]) {
+    return;
+  }
+  $parent[$var] += array(
+    '#dcss_info' => $info,
+    '#element_validate' => array(
+    ),
+  );
+  if ($info['suffix']) {
+    $parent[$var]['#element_validate'][] = 'dcss_ui_add_suffix';
+  }
 }
 
+/*
+ * Element validator that adds px
+ */
 function dcss_ui_add_suffix($element, &$form_values) {
   form_set_value($element, $element['#value'] . $element['#dcss_info']['suffix'], $form_values);
 }
