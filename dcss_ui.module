@@ -124,7 +124,7 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
         '#type' => 'radios',
        	'#title' => $info['title'],
        	'#default_value' => $value,
-       	'#options' => $option_types[$info['options_type']],
+       	'#options' => $option_types[$info['option_type']],
       );
     break;
     case 'boolean':
@@ -185,6 +185,16 @@ function dcss_ui_dcss_option_types() {
       'outset' => 'Outset',
       'inherit' => 'Inherit',
     ),
+    'font_family' => drupal_map_assoc(array(
+      '"Times New Roman", Times, Georgia, "DejaVu Serif", serif',
+      'Times, "Times New Roman", Georgia, "DejaVu Serif", serif',
+      'Georgia, "Times New Roman", "DejaVu Serif", serif',
+      'Verdana, Tahoma, "DejaVu Sans", sans-serif',
+      'Tahoma, Verdana, "DejaVu Sans", sans-serif',
+      'Helvetica, Arial, "Nimbus Sans L", sans-serif',
+      'Arial, Helvetica, "Nimbus Sans L", sans-serif',
+      '"Courier New", "DejaVu Sans Mono", monospace',
+    )),
   );
 }
 
