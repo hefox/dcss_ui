@@ -25,7 +25,7 @@ function dcss_ui_form_system_theme_settings_alter(&$form, $form_state) {
  * Goes through each element in an array, dealing with it.
  */
 function dcss_ui_build_elements(&$parent, $settings, $values) {
-  foreach($values as $var => $value) {  
+  foreach($values as $var => $value) {
     $info = $settings[$var];
     if (!isset($info)) {
       // If no Dcss ui settings, store the dcss variable so it's kept on save
@@ -36,6 +36,7 @@ function dcss_ui_build_elements(&$parent, $settings, $values) {
     }
     else {
       $info['title'] = (!empty($info['title']) ? check_plain($info['title']) : check_plain($var));
+
       if (!empty($info['below'])) {
         $parent[$var] = array(
           '#type' => ($info['type'] == 'group'?'fieldset':NULL),
@@ -104,12 +105,12 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
       $parent[$var]['color'] = array(
         '#type' => (module_exists('colorpicker') ? 'colorpicker_' : '') . 'textfield',
        	'#title' => $info['title'],
-       	'#default_value' => ($value && $value != 'none'? $value : '#000000'),
-      ); 
+       	'#default_value' => (!empty($value)? $value : '#000000'),
+      );
       $parent[$var]['none'] = array(
         '#type' => 'checkbox',
        	'#title' => t('Ignore'),
-       	'#default_value' => ((empty($value) || $value == 'none')? TRUE : FALSE),
+       	'#default_value' => (empty($value) ? TRUE : FALSE),
       );
       $parent[$var]['#element_validate'] = array(
         'dcss_ui_noneify_color',
@@ -120,10 +121,14 @@ function dcss_ui_build_element(&$parent, $var, $info, $value) {
         $option_types = module_invoke_all('dcss_option_types');
         drupal_alter('dcss_option_types', $option_types);
       }
+      // set option_type to var if not supplied
+      if (empty($info['option_type'])) {
+        $info['option_type'] = $var;
+      }
       $parent[$var] = array(
         '#type' => 'radios',
        	'#title' => $info['title'],
-       	'#default_value' => $value,
+       	'#default_value' => (!empty($value)?$value: ''),
        	'#options' => $option_types[$info['option_type']],
       );
     break;
@@ -159,7 +164,7 @@ function dcss_ui_add_suffix($element, &$form_values) {
  */
 function dcss_ui_noneify_color($element, &$form_values) {
   if ($element['none']['#value']) {
-    $value = 'none';
+    $value = 0;
   }
   else {
     $value =  $element['color']['#value'];
@@ -195,6 +200,15 @@ function dcss_ui_dcss_option_types() {
       'Arial, Helvetica, "Nimbus Sans L", sans-serif',
       '"Courier New", "DejaVu Sans Mono", monospace',
     )),
+    'text_decoration' => array('' => t('Ignore')) + drupal_map_assoc(array(
+      'none',
+      'underline',
+      'overline',
+      'line-through',
+      'blink',
+      'inherit',
+    )  
+    ),
   );
 }
 
